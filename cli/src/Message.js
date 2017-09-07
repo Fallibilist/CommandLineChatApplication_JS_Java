@@ -20,4 +20,8 @@ export class Message {
   toString () {
     return this.contents
   }
+
+  toNumber() {
+    return parseInt(this.contents)
+  }
 }

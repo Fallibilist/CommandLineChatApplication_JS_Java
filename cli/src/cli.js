@@ -9,20 +9,33 @@ let username
 let server
 
 cli
-  .delimiter(cli.chalk['yellow']('ftd~$'))
+  .delimiter(cli.chalk['yellow']('Enter a command: '))
 
 cli
-  .mode('connect <username>')
-  .delimiter(cli.chalk['green']('connected>'))
+  .mode('connect <username> <host> <port>', 'Connects as <username> with IPv4 address <host> on port <port>')
+  .delimiter(cli.chalk['green']('<connected>'))
   .init(function (args, callback) {
     username = args.username
-    server = connect({ host: 'localhost', port: 8080 }, () => {
+    server = connect({ host: args.host, port: args.port }, () => {
       server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
       callback()
     })
 
     server.on('data', (buffer) => {
-      this.log(Message.fromJSON(buffer).toString())
+      let serverMessage = Message.fromJSON(buffer)
+      switch(serverMessage.command) {
+        case 'alert':
+        case 'echo':
+        case '@':
+        case 'broadcast':
+        case 'users':
+        case 'disconnect':
+          this.log(serverMessage.toString())
+          break;
+        default:
+          // Some sort of error checking here
+          break;
+      }
     })
 
     server.on('end', () => {
@@ -30,16 +43,34 @@ cli
     })
   })
   .action(function (input, callback) {
-    const [ command, ...rest ] = words(input)
-    const contents = rest.join(' ')
-
-    if (command === 'disconnect') {
-      server.end(new Message({ username, command }).toJSON() + '\n')
-    } else if (command === 'echo') {
-      server.write(new Message({ username, command, contents }).toJSON() + '\n')
+    let command
+    let contents
+    if(input.charAt(0) !== '@') {
+      const [firstWord, ...rest] = words(input)
+      command = firstWord
+      contents = rest.join(' ')
     } else {
-      this.log(`Command <${command}> was not recognized`)
+      command = '@'
+      const rest = input.split("")
+      contents = rest.slice(1, rest.length).join('')
+    }
+
+    switch(command) {
+      case 'echo':
+      case 'users':
+      case 'change username':
+      case '@':
+      case 'broadcast':
+        server.write(new Message({ username, command, contents }).toJSON() + '\n')
+        break;
+      case 'disconnect':
+        server.end(new Message({ username, command }).toJSON() + '\n')
+        break;
+      default:
+        server.write(new Message({ username, command : 'no command', contents : (command + " " + contents) }).toJSON() + '\n')
+        break;
     }
 
     callback()
   })
+
