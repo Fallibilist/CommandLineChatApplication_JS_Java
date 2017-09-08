@@ -5,6 +5,7 @@ import { Message } from './Message'
 
 export const cli = vorpal()
 
+// This function returns the current time in a formatted string
 let getCurrentTime = () => {
   let date = new Date()
   let hours = date.getHours()
@@ -47,10 +48,12 @@ let getCurrentTime = () => {
   return timeBuilder
 }
 
+// This parses the information recieved from the serve and outputs it in the correct formatting
 let outputBuilderFunc = (command, messageUsername, messageContents) => {
   return `${cli.chalk.cyan.bold(getCurrentTime())} ${cli.chalk.white(`<${messageUsername}>`)} ${cli.chalk.green(command)}` +  messageContents
 }
 
+// The CLI output meno post connection
 let helpOutputFunc = () => {
   return `${cli.chalk.green('\n   Commands: ')}` +
     `${cli.chalk.cyan.bold('\n     echo <message>          :    Sends your message back to you')}` +
@@ -66,6 +69,7 @@ let username
 let server
 let previousCommand = ''
 
+// Initial welcoming and instructions for user
 cli.log(`${cli.chalk.blue('       Welcome')} To ` + 
           `${cli.chalk.bold.green("Greg's")} ` + 
             `${cli.chalk.cyan.bold('Incredibly')} ` + 
@@ -90,10 +94,14 @@ cli
       callback()
     })
 
+    // When the server disconnects this handles the exception and closes the clientside connection
     server.on('error', function(ex) {
       console.log("No Server Found! Please Run The Server!");
+      cli.delimiter(cli.chalk.bold.yellow('\nEnter connection details :'))
+      cli.exec('exitVorp')
     });
 
+    // Outputs the color key to the CLI
     server.on('connect', function(ex) {
       cli.log(`${cli.chalk.green('\nC')}` + 
                 `${cli.chalk.blue('o')}` + 
@@ -114,8 +122,10 @@ cli
                             `${cli.chalk.yellow.bold('\n\n   <Type HELP For Commands>\n')}`)
     });
 
+    // Sets the initial delimiter following connection
     cli.delimiter((`${cli.chalk.green('(Connected)')} ${cli.chalk.yellow('Enter a command')}`))
 
+    // Recieves data from the server
     server.on('data', (buffer) => {
       let serverMessage = Message.fromJSON(buffer)
       let outputBuilder = ''
@@ -124,17 +134,17 @@ cli
           this.log(serverMessage.toString())
           break
         case '@':
-          this.log(outputBuilderFunc(`(whisper) ${cli.chalk.gray(':')}`, serverMessage.username, cli.chalk.gray(serverMessage.toString())))
+          this.log(outputBuilderFunc(`(whisper) ${cli.chalk.gray(': ')}`, serverMessage.username, cli.chalk.gray(serverMessage.toString())))
           break
         case 'alert':
           username = serverMessage.username
           this.log(outputBuilderFunc(cli.chalk.red.bold('has connected'), serverMessage.username, cli.chalk.red.bold(serverMessage.toString())))
           break
         case 'echo':
-          this.log(outputBuilderFunc(`(echo) ${cli.chalk.gray(':')}`, serverMessage.username, cli.chalk.cyan(serverMessage.toString())))
+          this.log(outputBuilderFunc(`(echo) ${cli.chalk.gray(': ')}`, serverMessage.username, cli.chalk.cyan(serverMessage.toString())))
           break
         case 'broadcast':
-          this.log(outputBuilderFunc(`(all) ${cli.chalk.gray(':')}`, serverMessage.username, cli.chalk.white(serverMessage.toString())))
+          this.log(outputBuilderFunc(`(all) ${cli.chalk.gray(': ')}`, serverMessage.username, cli.chalk.white(serverMessage.toString())))
           break
         case 'disconnect':
         case 'exit':
@@ -163,6 +173,7 @@ cli
     let command
     let contents
 
+    // Parses the incoming messages
     if(input.charAt(0) !== '@') {
       const [firstWord, ...rest] = input.split(' ')
       command = firstWord
@@ -181,6 +192,7 @@ cli
       contents = rest.slice(1, rest.length).join('')
     }
       
+    // Sends messages to the server to handle
     switch(command) {
       case 'HELP':
       case 'Help':
