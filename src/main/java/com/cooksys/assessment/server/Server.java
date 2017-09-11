@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class Server implements Runnable {
 		super();
 		this.port = port;
 		this.executor = executor;
-		this.clientConnections = new HashMap<String, ClientHandler>();
+		this.clientConnections = new ConcurrentHashMap<String, ClientHandler>();
 	}
 
 	public void run() {

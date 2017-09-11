@@ -121,7 +121,7 @@ public class ClientHandler implements Runnable {
 	}
 	
 	// Outputs the received message to this client
-	public void outputMessage(Message message) {
+	public synchronized void outputMessage(Message message) {
 		if(!socket.isClosed()) {
 			try {
 				String userListResponse = mapper.writeValueAsString(message);
@@ -156,16 +156,13 @@ public class ClientHandler implements Runnable {
 	}
 
 	// Echos the received message back to the client
-	private void echoCommand(Message message) throws JsonProcessingException {
+	private void echoCommand(Message message) {
 		log.info("user <{}> echoed message: <{}>", message.getUsername(), message.getContents());
-		
-		String echoResponse = mapper.writeValueAsString(message);
-		writer.write(echoResponse);
-		writer.flush();
+		outputMessage(message);
 	}
 
 	// Handles private messaging from client to client
-	private void directMessageCommand(Message message) throws JsonProcessingException {
+	private void directMessageCommand(Message message) {
 		boolean foundRecipient = false;
 		StringBuffer messageDeconstructor = new StringBuffer("");
 		ClientHandler recipientHandler = null;
@@ -203,14 +200,12 @@ public class ClientHandler implements Runnable {
 		} else {
 			message.setContents("The user <" + mostRecentRecipient + "> is not currently connected!");
 			message.setCommand("error");
-			String dmResponse = mapper.writeValueAsString(message);
-			writer.write(dmResponse);
-			writer.flush();
+			outputMessage(message);
 		}
 	}
 
 	// Allows clients to broadcast commands to all other clients connected to the server
-	private synchronized void broadcastCommand(Message message) {
+	private void broadcastCommand(Message message) {
 		log.info("user <{}> broadcasted: <{}>", message.getUsername(), message.getContents());
 		
 		clientConnections.values().forEach(client -> {
@@ -221,7 +216,7 @@ public class ClientHandler implements Runnable {
 	}
 
 	// Sends a lit of all connected clients back to the client
-	private synchronized void usersCommand(Message message) throws JsonProcessingException {
+	private void usersCommand(Message message) {
 		log.info("user <{}> queried for a list of users", message.getUsername());
 		
 		StringBuffer usernameListBuilder = new StringBuffer("${cli.chalk.cyan.bold(getCurrentTime())} ${cli.chalk.bold('Online Users: ')}");
@@ -231,9 +226,7 @@ public class ClientHandler implements Runnable {
 		
 		message.setContents(usernameListBuilder.toString());
 		
-		String userListResponse = mapper.writeValueAsString(message);
-		writer.write(userListResponse);
-		writer.flush();
+		outputMessage(message);
 	}
 
 	// Handles disconnecting the user and closing the socket
@@ -254,9 +247,7 @@ public class ClientHandler implements Runnable {
 	// Handles illegal commands or unknown recipients
 	private void noPreviousCommand(Message message) throws IOException {
 		message.setContents("Illegal Command or Unknown Recipient: " + message.getContents());
-		String userListResponse = mapper.writeValueAsString(message);
-		writer.write(userListResponse);
-		writer.flush();
+		outputMessage(message);
 	}
 
 	// IF the command send is not recognized then the server tries to apply the most recent command used

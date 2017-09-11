@@ -53,7 +53,7 @@ let outputBuilderFunc = (command, messageUsername, messageContents) => {
   return `${cli.chalk.cyan.bold(getCurrentTime())} ${cli.chalk.white(`<${messageUsername}>`)} ${cli.chalk.green(command)}` +  messageContents
 }
 
-// The CLI output meno post connection
+// The CLI output menu post connection
 let helpOutputFunc = () => {
   return `${cli.chalk.green('\n   Commands: ')}` +
     `${cli.chalk.cyan.bold('\n     echo <message>          :    Sends your message back to you')}` +
